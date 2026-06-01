@@ -14,49 +14,38 @@
 
 import "std.str" as str
 
-import "lex-cli/arg"    as arg
+import "lex-cli/arg" as arg
+
 import "lex-cli/parser" as parser
+
 import "lex-cli/output" as output
+
 import "lex-schema/json_value" as jv
 
 # ---- CLI definition --------------------------------------------------
-
 fn make_cli() -> arg.CliDef {
-  {
-    name:        "hello",
-    version:     "0.1.0",
-    description: "Greet someone from the command line.",
-    flags: [
-      arg.flag_str("name",   "n", "Name of the person to greet", "World"),
-      arg.flag_str("output", "o", "Output format: text or json",  "text"),
-    ],
-    positionals: [],
-    subcommands: [],
-  }
+  { name: "hello", version: "0.1.0", description: "Greet someone from the command line.", flags: [arg.flag_str("name", "n", "Name of the person to greet", "World"), arg.flag_str("output", "o", "Output format: text or json", "text")], positionals: [], subcommands: [] }
 }
 
 # ---- Entry point ------------------------------------------------------
-
 fn main() -> [io] Nil {
   let cli := make_cli()
-
-  # Hardcoded argv for demonstration — replace with env.args() when available.
   let argv := ["--name", "Alice"]
-
   match parser.parse(cli, argv) {
     Err(e1) => {
       match e1 {
-        arg.UnknownFlag(f)       => io.print(str.concat("error: unknown flag ", f)),
-        arg.MissingPositional(p) => io.print(str.concat("error: missing argument ", p)),
-        arg.UnknownSubcommand(s) => io.print(str.concat("error: unknown subcommand ", s)),
+        UnknownFlag(f) => io.print(str.concat("error: unknown flag ", f)),
+        MissingPositional(p) => io.print(str.concat("error: missing argument ", p)),
+        UnknownSubcommand(s) => io.print(str.concat("error: unknown subcommand ", s)),
       }
     },
     Ok(parsed) => {
       let name := arg.get_flag_str(parsed, "name", "World")
       let mode := output.detect_mode(parsed)
       let text := str.concat("Hello, ", str.concat(name, "!"))
-      let data := jv.JObj([("greeting", jv.JStr(text)), ("name", jv.JStr(name))])
+      let data := JObj([("greeting", JStr(text)), ("name", JStr(name))])
       output.print_ok(mode, "hello", text, data)
     },
   }
 }
+
