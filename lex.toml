@@ -1,0 +1,8 @@
+[package]
+name        = "lex-cli"
+version     = "0.1.0"
+description = "CLI argument parsing and ACLI-compatible output for Lex programs."
+license     = "EUPL-1.2"
+
+[dependencies]
+lex-schema = { path = "../lex-schema" }
