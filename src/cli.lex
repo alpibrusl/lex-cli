@@ -16,7 +16,15 @@ import "./output" as output
 
 import "./acli" as acli
 
+import "./config" as config
+
+import "./api" as api
+
 # ---- Type re-exports -------------------------------------------------
+type Config = config.Config
+
+type ApiResult = api.ApiResult
+
 type FlagValue = arg.FlagValue
 
 type FlagDef = arg.FlagDef
