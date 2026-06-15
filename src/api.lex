@@ -11,8 +11,11 @@
 # Effects: get_json / post_json — [net]
 
 import "std.str" as str
+
 import "std.map" as map
+
 import "std.bytes" as bytes
+
 import "std.http" as http
 
 # Outcome of an API call: the HTTP status and the raw JSON body string.
@@ -26,7 +29,6 @@ fn err_result(msg :: Str) -> ApiResult {
 }
 
 # ---- Request builders ------------------------------------------------
-
 fn base_req(method :: Str, url :: Str) -> { method :: Str, url :: Str, headers :: Map[Str, Str], body :: Option[Bytes], timeout_ms :: Option[Int] } {
   { method: method, url: url, headers: map.new(), body: None, timeout_ms: Some(30000) }
 }
@@ -40,7 +42,6 @@ fn maybe_auth[R](req :: R, token :: Str) -> R {
 }
 
 # ---- Public API ------------------------------------------------------
-
 # GET <base><path> with optional Bearer token; decode the JSON body.
 fn get_json(base :: Str, path :: Str, token :: Str) -> [net] ApiResult {
   let req := maybe_auth(base_req("GET", base + path), token)
@@ -56,16 +57,20 @@ fn post_json(base :: Str, path :: Str, body_json :: Str, token :: Str) -> [net] 
 }
 
 # ---- Response handling -----------------------------------------------
-
 fn finish(sent :: Result[HttpResponse, HttpError]) -> ApiResult {
   match sent {
     Err(_) => err_result("request failed"),
     Ok(resp) => {
       let ok := resp.status >= 200 and resp.status < 300
       match http.text_body(resp) {
-        Err(_) => { ok: ok, status: resp.status, body: "", error: if ok { "" } else { "could not read response body" } },
+        Err(_) => { ok: ok, status: resp.status, body: "", error: if ok {
+          ""
+        } else {
+          "could not read response body"
+        } },
         Ok(s) => { ok: ok, status: resp.status, body: s, error: "" },
       }
     },
   }
 }
+

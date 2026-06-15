@@ -14,9 +14,13 @@
 #   *_path      — [env]
 
 import "std.str" as str
+
 import "std.io" as io
+
 import "std.fs" as fs
+
 import "std.env" as env
+
 import "std.json" as json
 
 # The persisted config. Kept deliberately small; tools that need more can
@@ -28,7 +32,6 @@ fn empty() -> Config {
 }
 
 # ---- Paths -----------------------------------------------------------
-
 fn getenv(key :: Str) -> [env] Str {
   match env.get(key) {
     Some(v) => v,
@@ -45,7 +48,6 @@ fn config_path(tool :: Str) -> [env] Str {
 }
 
 # ---- Load / save -----------------------------------------------------
-
 # Load the tool's config, or an empty config if absent/unreadable/malformed.
 fn load(tool :: Str) -> [io, env] Config {
   match io.read(config_path(tool)) {
@@ -71,7 +73,6 @@ fn save(tool :: Str, cfg :: Config) -> [io, fs_write, env] Result[Unit, Str] {
 }
 
 # ---- Credential / setting resolution ---------------------------------
-
 # Resolve a setting by precedence: flag (if non-empty) > env var > config
 # value (if non-empty) > default. The empty string means "unset" at each
 # layer, so a caller passes "" for an absent flag.
@@ -93,7 +94,7 @@ fn resolve(flag :: Str, env_name :: Str, cfg_val :: Str, dflt :: Str) -> [env] S
 }
 
 # ---- Internal --------------------------------------------------------
-
 fn esc(s :: Str) -> Str {
   str.replace(str.replace(s, "\\", "\\\\"), "\"", "\\\"")
 }
+

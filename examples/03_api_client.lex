@@ -9,9 +9,11 @@
 # shows the authenticated shape.
 
 import "std.io" as io
+
 import "std.int" as int
 
 import "../src/config" as config
+
 import "../src/api" as api
 
 # Resolve the API base the way a real CLI would: flag > env > config > default.
@@ -48,3 +50,4 @@ fn save_token_demo(tok :: Str) -> [io, fs_write, env] Int {
     },
   }
 }
+
