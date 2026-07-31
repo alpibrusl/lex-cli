@@ -29,6 +29,23 @@ fn parse(cli :: arg.CliDef, argv :: List[Str]) -> Result[arg.ParsedArgs, arg.Par
   parse_loop(cli, argv, init)
 }
 
+# ---- Effective flags for the current parse state ----------------------
+# A flag token is resolved against the top-level CliDef.flags PLUS the
+# active subcommand's own flags (once one has been chosen) — a
+# SubcommandDef's `flags` list used to be read only by help.lex's
+# renderer, never by parsing, so a flag declared solely on a subcommand
+# always failed with UnknownFlag even while that subcommand was active.
+fn effective_flags(cli :: arg.CliDef, current_subcommand :: Str) -> List[arg.FlagDef] {
+  if str.is_empty(current_subcommand) {
+    cli.flags
+  } else {
+    match find_subcommand(cli.subcommands, current_subcommand) {
+      None => cli.flags,
+      Some(sd) => list.concat(cli.flags, sd.flags),
+    }
+  }
+}
+
 # ---- Recursive loop --------------------------------------------------
 # Accumulator record mirrors ParsedArgs so we can build it up token by token.
 fn parse_loop(cli :: arg.CliDef, argv :: List[Str], acc :: arg.ParsedArgs) -> Result[arg.ParsedArgs, arg.ParseError] {
@@ -45,7 +62,7 @@ fn parse_loop(cli :: arg.CliDef, argv :: List[Str], acc :: arg.ParsedArgs) -> Re
       } else {
         if str.starts_with(token, "-") and str.len(token) == 2 {
           let short := str.slice(token, 1, 2)
-          match find_flag_by_short(cli.flags, short) {
+          match find_flag_by_short(effective_flags(cli, acc.subcommand), short) {
             None => Err(arg.UnknownFlag(str.concat("-", short))),
             Some(fd) => {
               let new_flags := list.concat(acc.flags, [(fd.name, arg.FlagBool(true))])
@@ -79,11 +96,12 @@ fn parse_loop(cli :: arg.CliDef, argv :: List[Str], acc :: arg.ParsedArgs) -> Re
 type LongFlagState = { acc :: arg.ParsedArgs, remaining_argv :: List[Str] }
 
 fn parse_long_flag(cli :: arg.CliDef, body :: Str, rest :: List[Str], acc :: arg.ParsedArgs) -> Result[LongFlagState, arg.ParseError] {
+  let flags := effective_flags(cli, acc.subcommand)
   match find_eq(body, 0) {
     Some(eq_pos) => {
       let name := str.slice(body, 0, eq_pos)
       let value := str.slice(body, eq_pos + 1, str.len(body))
-      match find_flag_by_name(cli.flags, name) {
+      match find_flag_by_name(flags, name) {
         None => Err(arg.UnknownFlag(str.concat("--", name))),
         Some(_) => {
           let new_flags := list.concat(acc.flags, [(name, arg.FlagStr(value))])
@@ -93,7 +111,7 @@ fn parse_long_flag(cli :: arg.CliDef, body :: Str, rest :: List[Str], acc :: arg
       }
     },
     None => {
-      match find_flag_by_name(cli.flags, body) {
+      match find_flag_by_name(flags, body) {
         None => Err(arg.UnknownFlag(str.concat("--", body))),
         Some(fd) => {
           match fd.default {
