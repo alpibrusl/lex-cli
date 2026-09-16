@@ -15,8 +15,6 @@
 
 import "std.str" as str
 
-import "std.io" as io
-
 import "std.fs" as fs
 
 import "std.env" as env
@@ -49,8 +47,8 @@ fn config_path(tool :: Str) -> [env] Str {
 
 # ---- Load / save -----------------------------------------------------
 # Load the tool's config, or an empty config if absent/unreadable/malformed.
-fn load(tool :: Str) -> [io, env] Config {
-  match io.read(config_path(tool)) {
+fn load(tool :: Str) -> [fs_read, env] Config {
+  match fs.read_to_string(config_path(tool)) {
     Err(_) => empty(),
     Ok(content) => {
       let parsed :: Result[Config, Str] := json.parse(content)
@@ -63,10 +61,10 @@ fn load(tool :: Str) -> [io, env] Config {
 }
 
 # Persist config (creates ~/.config/<tool>/ if needed).
-fn save(tool :: Str, cfg :: Config) -> [io, fs_write, env] Result[Unit, Str] {
+fn save(tool :: Str, cfg :: Config) -> [fs_write, env] Result[Unit, Str] {
   let __d := fs.mkdir_p(config_dir(tool))
   let body := "{\"api\":\"" + esc(cfg.api) + "\",\"token\":\"" + esc(cfg.token) + "\"}"
-  match io.write(config_path(tool), body) {
+  match fs.write(config_path(tool), body) {
     Err(e) => Err(e),
     Ok(_) => Ok(()),
   }
